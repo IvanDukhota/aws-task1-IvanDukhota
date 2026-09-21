@@ -1,0 +1,33 @@
+name: Test AWS Terraform
+
+on: [ push ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+
+    steps:
+    - name: Generate a token
+      id: generate-token
+      uses: actions/create-github-app-token@v2
+      with:
+        app-id: ${{ secrets.APP_ID }}
+        private-key: ${{ secrets.APP_PRIVATE_KEY }}
+    - uses: actions/checkout@v6
+      name: Checkout source code
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_wrapper: false
+    - name: Terraform Init
+      run: terraform init
+    - name: Check Terraform Config
+      run: bash -e ./.github/aws_tf_check.sh
+    - name: Final Step
+      env:
+        GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+      run: |
+        gh repo edit $GITHUB_REPOSITORY --visibility private --accept-visibility-change-consequences
+  
